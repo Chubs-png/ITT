@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internship Time Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add SheetJS for Excel processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              dark: {
+                900: "#0f172a",
+                800: "#1e293b",
+                700: "#334155",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Print Styles */
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+        body {
+          background-color: white !important;
+          color: black !important;
+        }
+        .dark\\:bg-dark-900 {
+          background-color: white !important;
+        }
+        .dark\\:bg-dark-800 {
+          background-color: #f8fafc !important;
+          border: 1px solid #e2e8f0;
+        }
+        .dark\\:text-white,
+        .dark\\:text-gray-300,
+        .dark\\:text-gray-400 {
+          color: black !important;
+        }
+        .bg-clip-text {
+          background: none !important;
+          color: black !important;
+        }
+        input[type="time"],
+        .date-input,
+        input[type="file"] {
+          color: black !important;
+          background: white !important;
+          border: 1px solid #cbd5e1 !important;
+        }
+        .shadow-lg,
+        .shadow-xl {
+          box-shadow: none !important;
+        }
+      }
+
+      /* Number inputs without arrows */
+      input[type="time"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        filter: invert(0.8) sepia(1) saturate(5) hue-rotate(175deg);
+      }
+
+      @media print {
+        input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: none;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-100 dark:bg-dark-900 text-gray-900 dark:text-white min-h-screen p-4 md:p-8 font-sans transition-colors duration-200"
+  >
+    <div class="max-w-5xl mx-auto">
+      <!-- Header Area -->
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4"
+      >
+        <div>
+          <h1
+            class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-2"
+          >
+            Internship Time Tracker
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400">
+            Log and manage your daily shift hours easily.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-4 no-print w-full md:w-auto">
+          <input
+            type="file"
+            id="excelUpload"
+            accept=".xlsx, .xls, .csv"
+            class="hidden"
+            onchange="handleExcelUpload(event)"
+          />
+
+          <button
+            onclick="document.getElementById('excelUpload').click()"
+            class="flex-1 md:flex-none px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-indigo-500/30 flex items-center justify-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Import Excel
+          </button>
+          <button
+            onclick="addDay()"
+            class="flex-1 md:flex-none px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Add Day
+          </button>
+          <button
+            onclick="window.print()"
+            class="flex-1 md:flex-none px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Print / PDF
+          </button>
+          <button
+            onclick="toggleTheme()"
+            class="px-3 py-3 bg-gray-200 dark:bg-dark-800 hover:bg-gray-300 dark:hover:bg-dark-700 text-gray-800 dark:text-white rounded-xl font-medium transition-all shadow-lg flex items-center justify-center"
+            aria-label="Toggle Dark Mode"
+            title="Toggle Theme"
+          >
+            <svg
+              id="themeIconDark"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 hidden dark:block"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+              />
+            </svg>
+            <svg
+              id="themeIconLight"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 block dark:hidden"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Container for entries -->
+      <div id="entriesContainer" class="space-y-6 mb-10">
+        <!-- Entry Template -> injected via JS -->
+      </div>
+
+      <!-- Grand Total -->
+      <div
+        class="bg-white dark:bg-dark-800 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-dark-700 flex flex-col md:flex-row justify-between items-center transition-colors"
+      >
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold dark:text-white mb-1">
+            Grand Total
+          </h2>
+          <p class="text-gray-500 dark:text-gray-400">
+            Total hours logged for all days
+          </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-baseline gap-2">
+          <span
+            id="grandTotal"
+            class="text-5xl font-black text-blue-600 dark:text-blue-400"
+            >0.00</span
+          >
+          <span class="text-xl text-gray-500 dark:text-gray-400 font-medium"
+            >hrs</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <template id="entryTemplate">
+      <div
+        class="entry-card bg-white dark:bg-dark-800 rounded-2xl p-5 md:p-6 shadow-md border border-gray-200 dark:border-dark-700 relative group transition-all hover:shadow-lg hover:border-blue-500/30"
+      >
+        <button
+          onclick="removeEntry(this)"
+          class="no-print absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 z-10"
+          title="Remove day"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+        <button
+          onclick="removeEntry(this)"
+          class="no-print md:hidden absolute top-4 right-4 text-red-500 hover:text-red-700 bg-red-100 dark:bg-red-900/30 p-1.5 rounded-lg"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- Date -->
+          <div class="md:col-span-3 lg:col-span-2 space-y-2">
+            <label
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >Date</label
+            >
+            <input
+              type="text"
+              placeholder="MM/DD"
+              class="date-input w-full bg-gray-50 dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-center tracking-wider font-medium"
+            />
+            <span
+              class="entry-warning hidden block text-xs font-semibold text-red-500 mt-1 uppercase"
+              >MISSING PUNCH</span
+            >
+          </div>
+
+          <!-- Morning Shift -->
+          <div
+            class="md:col-span-4 lg:col-span-4 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30"
+          >
+            <label
+              class="block text-sm font-bold text-blue-800 dark:text-blue-400 mb-3 flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Morning Shift
+            </label>
+            <div class="flex gap-3 items-center">
+              <div class="flex-1">
+                <span
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
+                  >Time In</span
+                >
+                <input
+                  type="time"
+                  class="time-in-m w-full bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-lg px-3 py-2 text-sm dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                  onchange="calculateRow(this)"
+                />
+              </div>
+              <span class="text-gray-400 mt-5 flex-shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </span>
+              <div class="flex-1">
+                <span
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
+                  >Time Out</span
+                >
+                <input
+                  type="time"
+                  class="time-out-m w-full bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-lg px-3 py-2 text-sm dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                  onchange="calculateRow(this)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Afternoon Shift -->
+          <div
+            class="md:col-span-4 lg:col-span-4 bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800/30"
+          >
+            <label
+              class="block text-sm font-bold text-orange-800 dark:text-orange-400 mb-3 flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+                />
+              </svg>
+              Afternoon Shift
+            </label>
+            <div class="flex gap-3 items-center">
+              <div class="flex-1">
+                <span
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
+                  >Time In</span
+                >
+                <input
+                  type="time"
+                  class="time-in-a w-full bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-lg px-3 py-2 text-sm dark:text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all shadow-sm"
+                  onchange="calculateRow(this)"
+                />
+              </div>
+              <span class="text-gray-400 mt-5 flex-shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </span>
+              <div class="flex-1">
+                <span
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
+                  >Time Out</span
+                >
+                <input
+                  type="time"
+                  class="time-out-a w-full bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-lg px-3 py-2 text-sm dark:text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all shadow-sm"
+                  onchange="calculateRow(this)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div
+            class="md:col-span-1 lg:col-span-2 flex flex-col items-end md:items-center justify-center border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-5 md:pt-0 mt-2 md:mt-0"
+          >
+            <span
+              class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider"
+              >Total</span
+            >
+            <div class="text-3xl font-bold dark:text-white row-total">0.00</div>
+            <span class="text-xs font-medium text-gray-400">hours</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      function initialize() {
+        // Init theme
+        if (
+          localStorage.theme === "dark" ||
+          (!("theme" in localStorage) &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+
+        // Add one default day
+        addDay();
+      }
+
+      function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle("dark");
+        localStorage.theme = isDark ? "dark" : "light";
+      }
+
+      function addDay() {
+        const container = document.getElementById("entriesContainer");
+        const template = document.getElementById("entryTemplate");
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector(".entry-card");
+
+        // Add subtle animation in
+        card.style.opacity = "0";
+        card.style.transform = "translateY(10px)";
+
+        // Auto-fill date incrementally based on the last card added
+        const cards = container.querySelectorAll(".entry-card");
+        const dateInput = clone.querySelector(".date-input");
+
+        if (cards.length > 0) {
+          const lastDateInput =
+            cards[cards.length - 1].querySelector(".date-input");
+          if (lastDateInput && lastDateInput.value) {
+            const val = lastDateInput.value.replace("-", "/");
+            const parts = val.split("/");
+            if (parts.length === 2) {
+              const currentYear = new Date().getFullYear();
+              const nextDate = new Date(currentYear, parts[0] - 1, parts[1]);
+              nextDate.setDate(nextDate.getDate() + 1);
+
+              const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
+              const dd = String(nextDate.getDate()).padStart(2, "0");
+              dateInput.value = `${mm}/${dd}`;
+            }
+          }
+        } else {
+          // First entry gets today's date
+          const today = new Date();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          dateInput.value = `${mm}/${dd}`;
+        }
+
+        card.dataset.total = "0";
+        container.appendChild(clone);
+
+        // Trigger animation
+        requestAnimationFrame(() => {
+          const addedCard = container.lastElementChild;
+          addedCard.style.transition =
+            "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+          addedCard.style.opacity = "1";
+          addedCard.style.transform = "translateY(0)";
+
+          // Focus on the first input of the new card
+          addedCard.querySelector('input[type="time"]').focus();
+        });
+      }
+
+      function removeEntry(btn) {
+        const card = btn.closest(".entry-card");
+        const container = document.getElementById("entriesContainer");
+
+        if (container.querySelectorAll(".entry-card").length <= 1) {
+          alert("You need at least one entry row.");
+          return;
+        }
+
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.95)";
+
+        setTimeout(() => {
+          card.remove();
+          calculateGrandTotal();
+        }, 200);
+      }
+
+      function timeToHours(timeStr) {
+        if (!timeStr) return 0;
+        const [hoursStr, minutesStr] = timeStr.split(":");
+        const hours = parseInt(hoursStr, 10);
+        const minutes = parseInt(minutesStr, 10);
+        return hours + minutes / 60;
+      }
+
+      function calculateRow(element) {
+        const row = element.closest(".entry-card");
+
+        const inM_val = row.querySelector(".time-in-m").value;
+        const outM_val = row.querySelector(".time-out-m").value;
+        const inA_val = row.querySelector(".time-in-a").value;
+        const outA_val = row.querySelector(".time-out-a").value;
+
+        const inM = timeToHours(inM_val);
+        const outM = timeToHours(outM_val);
+        const inA = timeToHours(inA_val);
+        const outA = timeToHours(outA_val);
+
+        // Missing Punch Check
+        let isMissingPunch = false;
+        if (
+          (inM_val && !outM_val) ||
+          (!inM_val && outM_val) ||
+          (inA_val && !outA_val) ||
+          (!inA_val && outA_val)
+        ) {
+          isMissingPunch = true;
+        }
+
+        const warningEl = row.querySelector(".entry-warning");
+        if (isMissingPunch) {
+          warningEl.classList.remove("hidden");
+          row.classList.add("border-red-500");
+          row.classList.remove("dark:border-dark-700", "border-gray-200");
+        } else {
+          warningEl.classList.add("hidden");
+          row.classList.remove("border-red-500");
+          row.classList.add("dark:border-dark-700", "border-gray-200");
+        }
+
+        let morningHours = 0;
+        if (outM > inM) {
+          morningHours = outM - inM;
+        } else if (outM > 0 && outM < inM) {
+          morningHours = outM + 24 - inM;
+        }
+
+        let afternoonHours = 0;
+        if (outA > inA) {
+          afternoonHours = outA - inA;
+        } else if (outA > 0 && outA < inA) {
+          afternoonHours = outA + 24 - inA;
+        }
+
+        const total = morningHours + afternoonHours;
+        const displayTotal = total > 0 ? total.toFixed(2) : "0.00";
+
+        const totalEl = row.querySelector(".row-total");
+
+        totalEl.classList.remove("text-blue-500");
+        void totalEl.offsetWidth; // trigger reflow
+        totalEl.classList.add("text-blue-500");
+
+        totalEl.textContent = displayTotal;
+        row.dataset.total = total;
+
+        setTimeout(() => {
+          totalEl.classList.remove("text-blue-500");
+        }, 300);
+
+        calculateGrandTotal();
+      }
+
+      function calculateGrandTotal() {
+        const rows = document.querySelectorAll(".entry-card");
+        let grandTotal = 0;
+
+        rows.forEach((row) => {
+          const total = parseFloat(row.dataset.total);
+          if (!isNaN(total)) {
+            grandTotal += total;
+          }
+        });
+
+        const grandTotalEl = document.getElementById("grandTotal");
+        const currentData = parseFloat(grandTotalEl.textContent);
+        const targetData = parseFloat(grandTotal.toFixed(2));
+
+        if (currentData !== targetData) {
+          grandTotalEl.textContent = targetData.toFixed(2);
+        }
+      }
+
+      function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            // raw: false forces SheetJS to use string representations matching the Excel display value
+            const workbook = XLSX.read(data, {
+              type: "array",
+              cellDates: true,
+              raw: false,
+            });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+            if (json.length === 0) {
+              alert("Excel sheet is empty or improperly formatted.");
+              event.target.value = "";
+              return;
+            }
+
+            const container = document.getElementById("entriesContainer");
+            container.innerHTML = ""; // Clear existing rows
+
+            json.forEach((row) => {
+              const keys = Object.keys(row);
+
+              const dKey =
+                keys.find((k) => k.toLowerCase().includes("date")) || keys[0];
+              const miKey =
+                keys.find(
+                  (k) =>
+                    k.toLowerCase().includes("morning") &&
+                    k.toLowerCase().includes("in"),
+                ) || keys[1];
+              const moKey =
+                keys.find(
+                  (k) =>
+                    k.toLowerCase().includes("morning") &&
+                    k.toLowerCase().includes("out"),
+                ) || keys[2];
+              const aiKey =
+                keys.find(
+                  (k) =>
+                    k.toLowerCase().includes("afternoon") &&
+                    k.toLowerCase().includes("in"),
+                ) || keys[3];
+              const aoKey =
+                keys.find(
+                  (k) =>
+                    k.toLowerCase().includes("afternoon") &&
+                    k.toLowerCase().includes("out"),
+                ) || keys[4];
+
+              const template = document.getElementById("entryTemplate");
+              const clone = template.content.cloneNode(true);
+              const card = clone.querySelector(".entry-card");
+              card.style.opacity = "1";
+              card.style.transform = "translateY(0)";
+
+              // Parse Date
+              if (row[dKey]) {
+                try {
+                  const d = new Date(row[dKey]);
+                  if (!isNaN(d.getTime())) {
+                    const mm = String(d.getMonth() + 1).padStart(2, "0");
+                    const dd = String(d.getDate()).padStart(2, "0");
+                    clone.querySelector(".date-input").value = `${mm}/${dd}`;
+                  }
+                } catch (err) {}
+              }
+
+              // Parse Time helper
+              function parseTimeStr(t, isAfternoon = false) {
+                if (!t) return "";
+                let ts = String(t).trim();
+                let hrs = 0,
+                  minsStr = "00";
+
+                if (/^\d{2}:\d{2}(:\d{2})?$/.test(ts)) {
+                  let parts = ts.split(":");
+                  hrs = parseInt(parts[0], 10);
+                  minsStr = parts[1];
+                } else {
+                  const match = ts.match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/);
+                  if (match) {
+                    hrs = parseInt(match[1], 10);
+                    minsStr = match[2];
+                    let ampm = match[3] ? match[3].toUpperCase() : null;
+                    if (ampm === "PM" && hrs < 12) hrs += 12;
+                    if (ampm === "AM" && hrs === 12) hrs = 0;
+                  } else if (!isNaN(parseFloat(ts)) && parseFloat(ts) < 1) {
+                    // Parse float times (Excel fractional days)
+                    let totalSeconds = parseFloat(ts) * 24 * 60 * 60;
+                    hrs = Math.floor(totalSeconds / 3600);
+                    minsStr = String(
+                      Math.floor((totalSeconds % 3600) / 60),
+                    ).padStart(2, "0");
+                  } else {
+                    return "";
+                  }
+                }
+
+                // If it's the afternoon shift, auto-adjust 1-11 to PM rules
+                if (isAfternoon && hrs >= 1 && hrs < 12) {
+                  hrs += 12;
+                }
+
+                return `${String(hrs).padStart(2, "0")}:${minsStr.padStart(2, "0")}`;
+              }
+
+              const inMInp = clone.querySelector(".time-in-m");
+              const outMInp = clone.querySelector(".time-out-m");
+              const inAInp = clone.querySelector(".time-in-a");
+              const outAInp = clone.querySelector(".time-out-a");
+
+              inMInp.value = parseTimeStr(row[miKey], false);
+              outMInp.value = parseTimeStr(row[moKey], false);
+              inAInp.value = parseTimeStr(row[aiKey], true);
+              outAInp.value = parseTimeStr(row[aoKey], true);
+
+              const timeInNode = clone.querySelector(".time-in-m");
+              card.dataset.total = "0";
+              container.appendChild(clone);
+
+              // Trigger calculation for this new row specifically
+              calculateRow(timeInNode);
+            });
+          } catch (error) {
+            console.error(error);
+            alert(
+              "Error parsing the Excel file. Please ensure it has standard columns for dates and times.",
+            );
+          }
+          event.target.value = "";
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      // Init
+      document.addEventListener("DOMContentLoaded", initialize);
+    </script>
+  </body>
+</html>
