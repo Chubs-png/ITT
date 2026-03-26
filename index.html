@@ -6,7 +6,7 @@
     <title>Internship Time Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add SheetJS for Excel processing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -33,16 +33,16 @@
           background-color: white !important;
           color: black !important;
         }
-        .dark\\:bg-dark-900 {
+        .dark\:bg-dark-900 {
           background-color: white !important;
         }
-        .dark\\:bg-dark-800 {
+        .dark\:bg-dark-800 {
           background-color: #f8fafc !important;
           border: 1px solid #e2e8f0;
         }
-        .dark\\:text-white,
-        .dark\\:text-gray-300,
-        .dark\\:text-gray-400 {
+        .dark\:text-white,
+        .dark\:text-gray-300,
+        .dark\:text-gray-400 {
           color: black !important;
         }
         .bg-clip-text {
@@ -51,13 +51,16 @@
         }
         input[type="time"],
         .date-input,
-        input[type="file"] {
+        input[type="file"],
+        input[type="text"] {
           color: black !important;
           background: white !important;
           border: 1px solid #cbd5e1 !important;
         }
         .shadow-lg,
-        .shadow-xl {
+        .shadow-xl,
+        .shadow-sm,
+        .shadow-md {
           box-shadow: none !important;
         }
       }
@@ -73,15 +76,115 @@
           filter: none;
         }
       }
+
+      /* === Animated Background === */
+      .animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      @media print {
+        .animated-bg { display: none !important; }
+      }
+
+      /* Dark mode gradient */
+      .dark .animated-bg {
+        background: linear-gradient(135deg, #0f172a 0%, #1a1040 25%, #0f172a 50%, #0a1628 75%, #0f172a 100%);
+      }
+
+      /* Light mode gradient */
+      .animated-bg {
+        background: linear-gradient(135deg, #e0e7ff 0%, #f0e4ff 25%, #e0f2fe 50%, #ecfdf5 75%, #e0e7ff 100%);
+      }
+
+      .animated-bg .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        animation: float 20s ease-in-out infinite;
+      }
+
+      .dark .animated-bg .orb {
+        opacity: 0.15;
+      }
+
+      .animated-bg .orb:nth-child(1) {
+        width: 500px;
+        height: 500px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        top: -10%;
+        left: -5%;
+        animation-duration: 22s;
+        animation-delay: 0s;
+      }
+
+      .animated-bg .orb:nth-child(2) {
+        width: 400px;
+        height: 400px;
+        background: linear-gradient(135deg, #06b6d4, #10b981);
+        top: 50%;
+        right: -8%;
+        animation-duration: 18s;
+        animation-delay: -5s;
+      }
+
+      .animated-bg .orb:nth-child(3) {
+        width: 350px;
+        height: 350px;
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        bottom: -5%;
+        left: 30%;
+        animation-duration: 25s;
+        animation-delay: -10s;
+      }
+
+      .animated-bg .orb:nth-child(4) {
+        width: 300px;
+        height: 300px;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        top: 30%;
+        left: 50%;
+        animation-duration: 20s;
+        animation-delay: -7s;
+      }
+
+      @keyframes float {
+        0%, 100% {
+          transform: translate(0, 0) scale(1);
+        }
+        25% {
+          transform: translate(60px, -80px) scale(1.1);
+        }
+        50% {
+          transform: translate(-40px, 60px) scale(0.95);
+        }
+        75% {
+          transform: translate(80px, 40px) scale(1.05);
+        }
+      }
     </style>
   </head>
   <body
     class="bg-gray-100 dark:bg-dark-900 text-gray-900 dark:text-white min-h-screen p-4 md:p-8 font-sans transition-colors duration-200"
   >
+    <!-- Animated Background -->
+    <div class="animated-bg">
+      <div class="orb"></div>
+      <div class="orb"></div>
+      <div class="orb"></div>
+      <div class="orb"></div>
+    </div>
     <div class="max-w-5xl mx-auto">
       <!-- Header Area -->
       <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4"
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 print:hidden"
       >
         <div>
           <h1
@@ -99,6 +202,7 @@
             id="excelUpload"
             accept=".xlsx, .xls, .csv"
             class="hidden"
+            multiple
             onchange="handleExcelUpload(event)"
           />
 
@@ -119,6 +223,24 @@
               />
             </svg>
             Import Excel
+          </button>
+          <button
+            onclick="exportToExcel()"
+            class="flex-1 md:flex-none px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-purple-500/30 flex items-center justify-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Export Excel
           </button>
           <button
             onclick="addDay()"
@@ -190,32 +312,196 @@
         </div>
       </div>
 
-      <!-- Container for entries -->
-      <div id="entriesContainer" class="space-y-6 mb-10">
-        <!-- Entry Template -> injected via JS -->
+      <!-- User Info Area -->
+      <div
+        id="userInfoContainer"
+        class="bg-white dark:bg-dark-800 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-dark-700 mb-10 transition-colors print:hidden"
+      >
+        <h2
+          class="text-xl font-bold dark:text-gray-200 mb-4 border-b border-gray-200 dark:border-dark-700 pb-2"
+        >
+          Student Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              >Full Name</label
+            >
+            <input
+              type="text"
+              id="studentName"
+              placeholder="e.g. John Doe"
+              class="w-full bg-gray-50 dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              >Degree Program</label
+            >
+            <input
+              type="text"
+              id="studentProgram"
+              placeholder="e.g. BS Information Technology"
+              class="w-full bg-gray-50 dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              >Year Level</label
+            >
+            <input
+              type="text"
+              id="studentYear"
+              placeholder="e.g. 4th Year"
+              class="w-full bg-gray-50 dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
+        </div>
       </div>
 
-      <!-- Grand Total -->
-      <div
-        class="bg-white dark:bg-dark-800 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-dark-700 flex flex-col md:flex-row justify-between items-center transition-colors"
-      >
-        <div>
-          <h2 class="text-2xl md:text-3xl font-bold dark:text-white mb-1">
-            Grand Total
-          </h2>
-          <p class="text-gray-500 dark:text-gray-400">
-            Total hours logged for all days
-          </p>
+      <!-- Container for months -->
+      <div id="monthsContainer" class="space-y-10 mb-10 print:hidden">
+        <!-- Month sections injected via JS -->
+      </div>
+
+      <!-- Overall Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 print:hidden">
+        <!-- Grand Total -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-dark-700 flex flex-col transition-colors print:hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-100 dark:border-dark-700 pb-6">
+              <div>
+                <h2 class="text-xl md:text-2xl font-bold dark:text-white mb-1">
+                  Grand Total
+                </h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Total logged hours
+                </p>
+              </div>
+              <div class="mt-4 md:mt-0 flex items-baseline gap-2">
+                 <span id="grandTotal" class="text-4xl font-black text-blue-600 dark:text-blue-400">0.00</span>
+                 <span class="text-lg text-gray-500 dark:text-gray-400 font-medium">hrs</span>
+              </div>
+            </div>
+            <!-- OT and UT split -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl flex justify-between items-center border border-emerald-100 dark:border-emerald-800/20">
+                  <span class="text-sm font-semibold text-emerald-800 dark:text-emerald-400">Total Overtime</span>
+                  <span id="grandTotalOt" class="text-xl font-bold text-emerald-600 dark:text-emerald-500">0.00 hrs</span>
+               </div>
+               <div class="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl flex justify-between items-center border border-red-100 dark:border-red-800/20">
+                  <span class="text-sm font-semibold text-red-800 dark:text-red-400">Total Undertime</span>
+                  <span id="grandTotalUt" class="text-xl font-bold text-red-600 dark:text-red-500">0.00 hrs</span>
+               </div>
+            </div>
         </div>
-        <div class="mt-4 md:mt-0 flex items-baseline gap-2">
-          <span
-            id="grandTotal"
-            class="text-5xl font-black text-blue-600 dark:text-blue-400"
-            >0.00</span
+
+        <!-- Hours Left -->
+        <div
+          class="bg-white dark:bg-dark-800 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-dark-700 flex flex-col md:flex-row justify-between items-center transition-colors print:hidden relative overflow-hidden"
+        >
+          <!-- Progress bar background -->
+          <div
+            id="progressBg"
+            class="absolute inset-y-0 left-0 bg-emerald-50 dark:bg-emerald-900/10 transition-all duration-500"
+            style="width: 0%"
+          ></div>
+
+          <div
+            class="relative z-10 w-full flex flex-col md:flex-row justify-between items-center"
           >
-          <span class="text-xl text-gray-500 dark:text-gray-400 font-medium"
-            >hrs</span
+            <div>
+              <h2 class="text-xl md:text-2xl font-bold dark:text-white mb-1">
+                Hours Left
+              </h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Target: 500 hours
+              </p>
+            </div>
+            <div
+              class="mt-4 md:mt-0 flex flex-col items-center md:items-end gap-1"
+            >
+              <div class="flex items-baseline gap-2">
+                <span
+                  id="hoursLeft"
+                  class="text-4xl font-black text-emerald-600 dark:text-emerald-400"
+                  >500.00</span
+                >
+                <span
+                  class="text-lg text-gray-500 dark:text-gray-400 font-medium"
+                  >hrs</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Print Only View -->
+      <div id="printContainer" class="hidden print:block py-4">
+        <h2
+          class="text-3xl font-bold mb-2 text-center text-black print:text-black"
+        >
+          Internship Time Tracker Report
+        </h2>
+
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-gray-800 pb-4 mb-8"
+        >
+          <div>
+            <p class="text-lg font-bold text-black flex gap-2">
+              <span>Name:</span>
+              <span
+                id="printStudentName"
+                class="font-normal underline min-w-[200px] inline-block pt-1"
+              ></span>
+            </p>
+            <p class="text-black flex gap-2 mt-1">
+              <span class="font-bold">Program:</span>
+              <span
+                id="printStudentProgram"
+                class="font-normal underline min-w-[200px] inline-block pt-1"
+              ></span>
+            </p>
+          </div>
+          <div class="text-right mt-4 md:mt-0">
+            <p class="text-black flex gap-2">
+              <span class="font-bold">Year Level:</span>
+              <span
+                id="printStudentYear"
+                class="font-normal underline min-w-[100px] inline-block pt-1"
+              ></span>
+            </p>
+          </div>
+        </div>
+
+        <div id="printTablesContainer">
+          <!-- Populated per month by JS -->
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div
+            class="border-2 border-gray-300 rounded-xl p-6 flex justify-between items-center bg-gray-50 shadow-sm print:bg-gray-100"
           >
+            <h3 class="text-2xl font-bold text-black">Overall Total Hours</h3>
+            <div class="text-3xl font-black text-black">
+              <span id="printGrandTotal">0.00</span>
+              <span class="text-lg font-medium text-gray-600">hrs</span>
+            </div>
+          </div>
+          <div
+            class="border-2 border-gray-300 rounded-xl p-6 flex justify-between items-center bg-gray-50 shadow-sm print:bg-gray-100"
+          >
+            <h3 class="text-2xl font-bold text-black">
+              Remaining Hours (Target: 500)
+            </h3>
+            <div class="text-3xl font-black text-black">
+              <span id="printHoursLeft">500.00</span>
+              <span class="text-lg font-medium text-gray-600">hrs</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -270,6 +556,8 @@
             <input
               type="text"
               placeholder="MM/DD"
+              maxlength="5"
+              oninput="formatDateInput(this)" onchange="calculateRow(this)"
               class="date-input w-full bg-gray-50 dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-center tracking-wider font-medium"
             />
             <span
@@ -299,8 +587,10 @@
               </svg>
               Morning Shift
             </label>
-            <div class="flex gap-3 items-center">
-              <div class="flex-1">
+            <div
+              class="flex flex-col xl:flex-row gap-3 items-start xl:items-center"
+            >
+              <div class="w-full xl:flex-1">
                 <span
                   class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
                   >Time In</span
@@ -311,23 +601,7 @@
                   onchange="calculateRow(this)"
                 />
               </div>
-              <span class="text-gray-400 mt-5 flex-shrink-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
-              </span>
-              <div class="flex-1">
+              <div class="w-full xl:flex-1">
                 <span
                   class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
                   >Time Out</span
@@ -360,8 +634,10 @@
               </svg>
               Afternoon Shift
             </label>
-            <div class="flex gap-3 items-center">
-              <div class="flex-1">
+            <div
+              class="flex flex-col xl:flex-row gap-3 items-start xl:items-center"
+            >
+              <div class="w-full xl:flex-1">
                 <span
                   class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
                   >Time In</span
@@ -372,23 +648,7 @@
                   onchange="calculateRow(this)"
                 />
               </div>
-              <span class="text-gray-400 mt-5 flex-shrink-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
-              </span>
-              <div class="flex-1">
+              <div class="w-full xl:flex-1">
                 <span
                   class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1"
                   >Time Out</span
@@ -402,24 +662,99 @@
             </div>
           </div>
 
-          <!-- Total -->
+          <!-- Daily Summary -->
           <div
-            class="md:col-span-1 lg:col-span-2 flex flex-col items-end md:items-center justify-center border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-5 md:pt-0 mt-2 md:mt-0"
+            class="md:col-span-1 lg:col-span-2 flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-5 md:pt-0 mt-2 md:mt-0 pl-0 lg:pl-4 space-y-2"
           >
-            <span
-              class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider"
-              >Total</span
-            >
-            <div class="text-3xl font-bold dark:text-white row-total">0.00</div>
-            <span class="text-xs font-medium text-gray-400">hours</span>
+            <div class="flex justify-between items-center w-full">
+               <span class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</span>
+               <div class="text-2xl font-black dark:text-white row-total">0.00</div>
+            </div>
+            <div class="flex justify-between items-center w-full pt-2 border-t border-gray-100 dark:border-dark-700">
+               <span class="text-xs font-semibold text-gray-500">Overtime</span>
+               <span class="text-sm font-bold text-emerald-500 row-ot">0.00</span>
+            </div>
+            <div class="flex justify-between items-center w-full">
+               <span class="text-xs font-semibold text-gray-500">Undertime</span>
+               <span class="text-sm font-bold text-red-500 row-ut">0.00</span>
+            </div>
           </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="monthSectionTemplate">
+      <div
+        class="month-section bg-gray-50 dark:bg-dark-800/40 p-5 md:p-8 rounded-3xl border border-gray-200 dark:border-dark-700 shadow-sm transition-colors print:p-0 print:border-none print:shadow-none"
+      >
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-200 dark:border-700 pb-4 gap-4 print:hidden"
+        >
+          <h2
+            class="text-2xl font-bold text-gray-800 dark:text-gray-100 month-title"
+          >
+            Month Year
+          </h2>
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              onclick="printSpecificMonth(this)"
+              class="px-4 py-2 bg-white hover:bg-gray-100 dark:bg-dark-700 dark:hover:bg-dark-600 text-gray-800 dark:text-gray-200 rounded-xl font-semibold text-sm transition-all shadow-sm border border-gray-300 dark:border-dark-600 flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Print Month
+            </button>
+            <div class="flex flex-col md:flex-row gap-2">
+              <div class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-1">
+                Total: <span class="month-subtotal text-base">0.00</span>
+              </div>
+              <div class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm border border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-1">
+                OT: <span class="month-ot">0.00</span>
+              </div>
+              <div class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-3 py-1.5 rounded-xl font-bold text-xs md:text-sm border border-red-200 dark:border-red-800 flex items-center justify-center gap-1">
+                UT: <span class="month-ut">0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="entries-container space-y-6 print:space-y-0">
+          <!-- Entry Template -> injected via JS -->
+        </div>
+        <div class="mt-6 flex justify-end print:hidden">
+          <button
+            onclick="addDayToMonth(this)"
+            class="px-5 py-2.5 bg-white dark:bg-dark-900 hover:bg-gray-100 dark:hover:bg-dark-800 text-gray-800 dark:text-white rounded-xl font-medium transition-all shadow-sm text-sm flex items-center gap-2 border border-gray-300 dark:border-dark-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 text-blue-600 dark:text-blue-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Add Day to <span class="btn-month-name"></span>
+          </button>
         </div>
       </div>
     </template>
 
     <script>
       function initialize() {
-        // Init theme
         if (
           localStorage.theme === "dark" ||
           (!("theme" in localStorage) &&
@@ -430,7 +765,7 @@
           document.documentElement.classList.remove("dark");
         }
 
-        // Add one default day
+        // Add one default month section & day
         addDay();
       }
 
@@ -440,73 +775,112 @@
       }
 
       function addDay() {
-        const container = document.getElementById("entriesContainer");
+        const monthsContainer = document.getElementById("monthsContainer");
+        let lastSection = monthsContainer.lastElementChild;
+        let monthName = "";
+
+        if (!lastSection) {
+          const today = new Date();
+          monthName = today.toLocaleString("default", { month: "long" });
+          lastSection = createMonthSection(monthName);
+        } else {
+          monthName = lastSection.dataset.month;
+        }
+
+        addDayToMonthSection(lastSection);
+      }
+
+      function createMonthSection(monthName) {
+        const container = document.getElementById("monthsContainer");
+        const template = document.getElementById("monthSectionTemplate");
+        const clone = template.content.cloneNode(true);
+        const section = clone.querySelector(".month-section");
+
+        section.dataset.month = monthName;
+        section.querySelector(".month-title").textContent = monthName;
+        section.querySelector(".btn-month-name").textContent =
+          monthName.split(" ")[0];
+
+        container.appendChild(clone);
+        return container.lastElementChild;
+      }
+
+      function addDayToMonth(btn) {
+        const section = btn.closest(".month-section");
+        addDayToMonthSection(section);
+      }
+
+      function addDayToMonthSection(section, dateVal = null) {
+        const entriesContainer = section.querySelector(".entries-container");
         const template = document.getElementById("entryTemplate");
         const clone = template.content.cloneNode(true);
         const card = clone.querySelector(".entry-card");
 
-        // Add subtle animation in
         card.style.opacity = "0";
         card.style.transform = "translateY(10px)";
 
-        // Auto-fill date incrementally based on the last card added
-        const cards = container.querySelectorAll(".entry-card");
         const dateInput = clone.querySelector(".date-input");
 
-        if (cards.length > 0) {
-          const lastDateInput =
-            cards[cards.length - 1].querySelector(".date-input");
-          if (lastDateInput && lastDateInput.value) {
-            const val = lastDateInput.value.replace("-", "/");
-            const parts = val.split("/");
-            if (parts.length === 2) {
-              const currentYear = new Date().getFullYear();
-              const nextDate = new Date(currentYear, parts[0] - 1, parts[1]);
-              nextDate.setDate(nextDate.getDate() + 1);
-
-              const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
-              const dd = String(nextDate.getDate()).padStart(2, "0");
-              dateInput.value = `${mm}/${dd}`;
-            }
-          }
+        if (dateVal) {
+          // Provided from Excel upload
+          dateInput.value = dateVal;
         } else {
-          // First entry gets today's date
-          const today = new Date();
-          const mm = String(today.getMonth() + 1).padStart(2, "0");
-          const dd = String(today.getDate()).padStart(2, "0");
-          dateInput.value = `${mm}/${dd}`;
+          const cards = entriesContainer.querySelectorAll(".entry-card");
+          if (cards.length > 0) {
+            const lastDateInput =
+              cards[cards.length - 1].querySelector(".date-input");
+            if (lastDateInput && lastDateInput.value) {
+              const val = lastDateInput.value.replace("-", "/");
+              const parts = val.split("/");
+              if (parts.length === 2) {
+                const currentYear = new Date().getFullYear();
+                const nextDate = new Date(currentYear, parts[0] - 1, parts[1]);
+                nextDate.setDate(nextDate.getDate() + 1);
+
+                const mm = String(nextDate.getMonth() + 1).padStart(2, "0");
+                const dd = String(nextDate.getDate()).padStart(2, "0");
+                dateInput.value = `${mm}/${dd}`;
+              }
+            }
+          } else {
+            const d = new Date();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            dateInput.value = `${mm}/${dd}`;
+          }
         }
 
         card.dataset.total = "0";
-        container.appendChild(clone);
+        entriesContainer.appendChild(clone);
+        const addedCard = entriesContainer.lastElementChild;
 
-        // Trigger animation
         requestAnimationFrame(() => {
-          const addedCard = container.lastElementChild;
           addedCard.style.transition =
             "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
           addedCard.style.opacity = "1";
           addedCard.style.transform = "translateY(0)";
 
-          // Focus on the first input of the new card
-          addedCard.querySelector('input[type="time"]').focus();
+          if (!dateVal) {
+            addedCard.querySelector('input[type="time"]').focus();
+          }
         });
+
+        return addedCard;
       }
 
       function removeEntry(btn) {
         const card = btn.closest(".entry-card");
-        const container = document.getElementById("entriesContainer");
-
-        if (container.querySelectorAll(".entry-card").length <= 1) {
-          alert("You need at least one entry row.");
-          return;
-        }
+        const section = btn.closest(".month-section");
+        const container = section.querySelector(".entries-container");
 
         card.style.opacity = "0";
         card.style.transform = "scale(0.95)";
 
         setTimeout(() => {
           card.remove();
+          if (container.querySelectorAll(".entry-card").length === 0) {
+            section.remove();
+          }
           calculateGrandTotal();
         }, 200);
       }
@@ -517,6 +891,40 @@
         const hours = parseInt(hoursStr, 10);
         const minutes = parseInt(minutesStr, 10);
         return hours + minutes / 60;
+      }
+
+      function formatDateInput(input) {
+        // Remove all non-numeric characters
+        let val = input.value.replace(/\D/g, "");
+        
+        if (val.length >= 2) {
+          let mm = parseInt(val.substring(0, 2), 10);
+          if (mm > 12) mm = 12;
+          if (mm === 0) mm = 1; // Prevent 00 month
+          
+          let mmStr = mm.toString().padStart(2, "0");
+          
+          if (val.length > 2) {
+            let ddStr = val.substring(2, 4);
+            
+            if (ddStr !== "0") {
+              let dd = parseInt(ddStr, 10);
+              let currentYear = new Date().getFullYear();
+              let maxDays = new Date(currentYear, mm, 0).getDate();
+              
+              if (dd > maxDays) dd = maxDays;
+              if (dd === 0 && ddStr.length === 2) dd = 1; // Prevent 00 day
+              
+              ddStr = ddStr.length === 2 ? dd.toString().padStart(2, "0") : dd.toString();
+            }
+            
+            val = mmStr + "/" + ddStr;
+          } else {
+            val = mmStr;
+          }
+        }
+        
+        input.value = val;
       }
 
       function calculateRow(element) {
@@ -554,6 +962,28 @@
           row.classList.add("dark:border-dark-700", "border-gray-200");
         }
 
+        // === Detect day of week from date input (MM/DD) ===
+        const dateInput = row.querySelector(".date-input").value || "";
+        let isWeekend = false;
+        if (dateInput) {
+          const parts = dateInput.replace("-", "/").split("/");
+          if (parts.length === 2) {
+            const currentYear = new Date().getFullYear();
+            const dateObj = new Date(currentYear, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
+            if (!isNaN(dateObj.getTime())) {
+              const day = dateObj.getDay();
+              isWeekend = (day === 0 || day === 6); // 0 = Sunday, 6 = Saturday
+            }
+          }
+        }
+
+        // === Shift Parameters ===
+        const SHIFT_START = 8.0;   // 8:00 AM
+        const SHIFT_END   = 17.0;  // 5:00 PM (weekday shift end)
+        const GRACE_PERIOD = 0.25; // 15 minutes
+        const OT_THRESHOLD = 1.0;  // 60 minutes for OT
+
+        // === 1. Rendered Hours ===
         let morningHours = 0;
         if (outM > inM) {
           morningHours = outM - inM;
@@ -568,17 +998,61 @@
           afternoonHours = outA + 24 - inA;
         }
 
-        const total = morningHours + afternoonHours;
-        const displayTotal = total > 0 ? total.toFixed(2) : "0.00";
+        const totalRendered = morningHours + afternoonHours;
 
+        // === 2. Determine Actual In / Actual Out ===
+        let actualIn = -1;
+        if (inM > 0) actualIn = inM;
+        else if (inA > 0) actualIn = inA;
+
+        let actualOut = -1;
+        if (outA > 0) actualOut = outA;
+        else if (outM > 0) actualOut = outM;
+
+        // === 3. Undertime (UT) & Overtime (OT) ===
+        let utMinutes = 0;
+        let otHours = 0;
+
+        if (isWeekend) {
+          // Weekend (Sat/Sun): ALL rendered hours = OT, no undertime
+          otHours = totalRendered;
+        } else {
+          // Weekday UT
+          if (actualIn !== -1 && actualOut !== -1) {
+            if (actualIn > (SHIFT_START + GRACE_PERIOD)) {
+              utMinutes += (actualIn - SHIFT_START) * 60;
+            }
+            if (actualOut < SHIFT_END) {
+              utMinutes += (SHIFT_END - actualOut) * 60;
+            }
+          }
+          // Weekday OT
+          if (actualOut > SHIFT_END) {
+            const diff = actualOut - SHIFT_END;
+            if (diff >= OT_THRESHOLD) {
+              otHours = diff;
+            }
+          }
+        }
+
+        // === Update UI ===
+        const displayTotal = totalRendered > 0 ? totalRendered.toFixed(2) : "0.00";
         const totalEl = row.querySelector(".row-total");
+        const otEl = row.querySelector(".row-ot");
+        const utEl = row.querySelector(".row-ut");
 
         totalEl.classList.remove("text-blue-500");
-        void totalEl.offsetWidth; // trigger reflow
+        void totalEl.offsetWidth;
         totalEl.classList.add("text-blue-500");
 
         totalEl.textContent = displayTotal;
-        row.dataset.total = total;
+        otEl.textContent = otHours > 0 ? otHours.toFixed(2) : "0.00";
+        const utHours = utMinutes / 60;
+        utEl.textContent = utHours > 0 ? utHours.toFixed(2) : "0.00";
+
+        row.dataset.total = totalRendered;
+        row.dataset.ot = otHours;
+        row.dataset.ut = utHours;
 
         setTimeout(() => {
           totalEl.classList.remove("text-blue-500");
@@ -588,34 +1062,73 @@
       }
 
       function calculateGrandTotal() {
-        const rows = document.querySelectorAll(".entry-card");
+        const sections = document.querySelectorAll(".month-section");
         let grandTotal = 0;
+        let grandOt = 0;
+        let grandUt = 0;
 
-        rows.forEach((row) => {
-          const total = parseFloat(row.dataset.total);
-          if (!isNaN(total)) {
-            grandTotal += total;
-          }
+        sections.forEach((section) => {
+          let monthTotal = 0;
+          let monthOt = 0;
+          let monthUt = 0;
+          const rows = section.querySelectorAll(".entry-card");
+
+          rows.forEach((row) => {
+            monthTotal += parseFloat(row.dataset.total || 0);
+            monthOt += parseFloat(row.dataset.ot || 0);
+            monthUt += parseFloat(row.dataset.ut || 0);
+          });
+
+          const subEl = section.querySelector(".month-subtotal");
+          const subOtEl = section.querySelector(".month-ot");
+          const subUtEl = section.querySelector(".month-ut");
+
+          if (subEl) subEl.textContent = monthTotal.toFixed(2);
+          if (subOtEl) subOtEl.textContent = monthOt.toFixed(2);
+          if (subUtEl) subUtEl.textContent = monthUt.toFixed(2);
+
+          grandTotal += monthTotal;
+          grandOt += monthOt;
+          grandUt += monthUt;
         });
 
-        const grandTotalEl = document.getElementById("grandTotal");
-        const currentData = parseFloat(grandTotalEl.textContent);
-        const targetData = parseFloat(grandTotal.toFixed(2));
+        document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
+        document.getElementById("grandTotalOt").textContent = grandOt.toFixed(2) + " hrs";
+        document.getElementById("grandTotalUt").textContent = grandUt.toFixed(2) + " hrs";
 
-        if (currentData !== targetData) {
-          grandTotalEl.textContent = targetData.toFixed(2);
+        // Hours Left logic
+        const targetHours = 500;
+        const hoursLeft = Math.max(0, targetHours - grandTotal);
+        const hoursLeftEl = document.getElementById("hoursLeft");
+        if (hoursLeftEl) {
+          hoursLeftEl.textContent = hoursLeft.toFixed(2);
+        }
+
+        const progressBg = document.getElementById("progressBg");
+        if (progressBg) {
+          const percentage = Math.min(100, (grandTotal / targetHours) * 100);
+          progressBg.style.width = percentage + "%";
         }
       }
 
-      function handleExcelUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+      function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+          reader.onerror = (e) => reject(e);
+          reader.readAsArrayBuffer(file);
+        });
+      }
 
-        const reader = new FileReader();
-        reader.onload = function (e) {
+      async function handleExcelUpload(event) {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        let allData = [];
+
+        for (const file of files) {
           try {
-            const data = new Uint8Array(e.target.result);
-            // raw: false forces SheetJS to use string representations matching the Excel display value
+            const data = await readFileAsArrayBuffer(file);
             const workbook = XLSX.read(data, {
               type: "array",
               cellDates: true,
@@ -624,130 +1137,421 @@
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             const json = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-
-            if (json.length === 0) {
-              alert("Excel sheet is empty or improperly formatted.");
-              event.target.value = "";
-              return;
-            }
-
-            const container = document.getElementById("entriesContainer");
-            container.innerHTML = ""; // Clear existing rows
-
-            json.forEach((row) => {
-              const keys = Object.keys(row);
-
-              const dKey =
-                keys.find((k) => k.toLowerCase().includes("date")) || keys[0];
-              const miKey =
-                keys.find(
-                  (k) =>
-                    k.toLowerCase().includes("morning") &&
-                    k.toLowerCase().includes("in"),
-                ) || keys[1];
-              const moKey =
-                keys.find(
-                  (k) =>
-                    k.toLowerCase().includes("morning") &&
-                    k.toLowerCase().includes("out"),
-                ) || keys[2];
-              const aiKey =
-                keys.find(
-                  (k) =>
-                    k.toLowerCase().includes("afternoon") &&
-                    k.toLowerCase().includes("in"),
-                ) || keys[3];
-              const aoKey =
-                keys.find(
-                  (k) =>
-                    k.toLowerCase().includes("afternoon") &&
-                    k.toLowerCase().includes("out"),
-                ) || keys[4];
-
-              const template = document.getElementById("entryTemplate");
-              const clone = template.content.cloneNode(true);
-              const card = clone.querySelector(".entry-card");
-              card.style.opacity = "1";
-              card.style.transform = "translateY(0)";
-
-              // Parse Date
-              if (row[dKey]) {
-                try {
-                  const d = new Date(row[dKey]);
-                  if (!isNaN(d.getTime())) {
-                    const mm = String(d.getMonth() + 1).padStart(2, "0");
-                    const dd = String(d.getDate()).padStart(2, "0");
-                    clone.querySelector(".date-input").value = `${mm}/${dd}`;
-                  }
-                } catch (err) {}
-              }
-
-              // Parse Time helper
-              function parseTimeStr(t, isAfternoon = false) {
-                if (!t) return "";
-                let ts = String(t).trim();
-                let hrs = 0,
-                  minsStr = "00";
-
-                if (/^\d{2}:\d{2}(:\d{2})?$/.test(ts)) {
-                  let parts = ts.split(":");
-                  hrs = parseInt(parts[0], 10);
-                  minsStr = parts[1];
-                } else {
-                  const match = ts.match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/);
-                  if (match) {
-                    hrs = parseInt(match[1], 10);
-                    minsStr = match[2];
-                    let ampm = match[3] ? match[3].toUpperCase() : null;
-                    if (ampm === "PM" && hrs < 12) hrs += 12;
-                    if (ampm === "AM" && hrs === 12) hrs = 0;
-                  } else if (!isNaN(parseFloat(ts)) && parseFloat(ts) < 1) {
-                    // Parse float times (Excel fractional days)
-                    let totalSeconds = parseFloat(ts) * 24 * 60 * 60;
-                    hrs = Math.floor(totalSeconds / 3600);
-                    minsStr = String(
-                      Math.floor((totalSeconds % 3600) / 60),
-                    ).padStart(2, "0");
-                  } else {
-                    return "";
-                  }
-                }
-
-                // If it's the afternoon shift, auto-adjust 1-11 to PM rules
-                if (isAfternoon && hrs >= 1 && hrs < 12) {
-                  hrs += 12;
-                }
-
-                return `${String(hrs).padStart(2, "0")}:${minsStr.padStart(2, "0")}`;
-              }
-
-              const inMInp = clone.querySelector(".time-in-m");
-              const outMInp = clone.querySelector(".time-out-m");
-              const inAInp = clone.querySelector(".time-in-a");
-              const outAInp = clone.querySelector(".time-out-a");
-
-              inMInp.value = parseTimeStr(row[miKey], false);
-              outMInp.value = parseTimeStr(row[moKey], false);
-              inAInp.value = parseTimeStr(row[aiKey], true);
-              outAInp.value = parseTimeStr(row[aoKey], true);
-
-              const timeInNode = clone.querySelector(".time-in-m");
-              card.dataset.total = "0";
-              container.appendChild(clone);
-
-              // Trigger calculation for this new row specifically
-              calculateRow(timeInNode);
-            });
+            allData = allData.concat(json);
           } catch (error) {
-            console.error(error);
-            alert(
-              "Error parsing the Excel file. Please ensure it has standard columns for dates and times.",
-            );
+            console.error("Error reading file", file.name, error);
+            alert("Error parsing " + file.name);
           }
+        }
+
+        if (allData.length === 0) {
+          alert("No initial valid data found in selected files.");
           event.target.value = "";
-        };
-        reader.readAsArrayBuffer(file);
+          return;
+        }
+
+        const monthsContainer = document.getElementById("monthsContainer");
+        monthsContainer.innerHTML = ""; // Clear existing data entirely
+
+        let groupedData = new Map();
+
+        allData.forEach((row) => {
+          const keys = Object.keys(row);
+          const dKey =
+            keys.find((k) => k.toLowerCase().includes("date")) || keys[0];
+
+          let monthYearKey = "Unknown Date";
+          let mmdd = "";
+
+          if (row[dKey]) {
+            try {
+              const d = new Date(row[dKey]);
+              if (!isNaN(d.getTime())) {
+                const mm = String(d.getMonth() + 1).padStart(2, "0");
+                const dd = String(d.getDate()).padStart(2, "0");
+                mmdd = `${mm}/${dd}`;
+                monthYearKey = d.toLocaleString("default", { month: "long" });
+              }
+            } catch (err) {}
+          }
+
+          if (!groupedData.has(monthYearKey)) {
+            groupedData.set(monthYearKey, []);
+          }
+          groupedData.get(monthYearKey).push({ row, mmdd, keys });
+        });
+
+        function parseTimeStr(t, isAfternoon = false) {
+          if (!t) return "";
+          let ts = String(t).trim();
+          let hrs = 0,
+            minsStr = "00";
+
+          if (/^\d{2}:\d{2}(:\d{2})?$/.test(ts)) {
+            let parts = ts.split(":");
+            hrs = parseInt(parts[0], 10);
+            minsStr = parts[1];
+          } else {
+            const match = ts.match(/(\d+):(\d+)\s*(AM|PM|am|pm)?/);
+            if (match) {
+              hrs = parseInt(match[1], 10);
+              minsStr = match[2];
+              let ampm = match[3] ? match[3].toUpperCase() : null;
+              if (ampm === "PM" && hrs < 12) hrs += 12;
+              if (ampm === "AM" && hrs === 12) hrs = 0;
+            } else if (!isNaN(parseFloat(ts)) && parseFloat(ts) < 1) {
+              let totalSeconds = parseFloat(ts) * 24 * 60 * 60;
+              hrs = Math.floor(totalSeconds / 3600);
+              minsStr = String(Math.floor((totalSeconds % 3600) / 60)).padStart(
+                2,
+                "0",
+              );
+            } else {
+              return "";
+            }
+          }
+
+          if (isAfternoon && hrs >= 1 && hrs < 12) {
+            hrs += 12;
+          }
+
+          return `${String(hrs).padStart(2, "0")}:${minsStr.padStart(2, "0")}`;
+        }
+
+        // Ensure chronological order of Months can be a bit tricky, but Map retains insertion order.
+        groupedData.forEach((entries, monthName) => {
+          const section = createMonthSection(monthName);
+
+          // Sort entries chronologically by MM/DD
+          entries.sort((a, b) => a.mmdd.localeCompare(b.mmdd));
+
+          entries.forEach((item) => {
+            const { row, mmdd, keys } = item;
+            const miKey =
+              keys.find(
+                (k) =>
+                  k.toLowerCase().includes("morning") &&
+                  k.toLowerCase().includes("in"),
+              ) || keys[1];
+            const moKey =
+              keys.find(
+                (k) =>
+                  k.toLowerCase().includes("morning") &&
+                  k.toLowerCase().includes("out"),
+              ) || keys[2];
+            const aiKey =
+              keys.find(
+                (k) =>
+                  k.toLowerCase().includes("afternoon") &&
+                  k.toLowerCase().includes("in"),
+              ) || keys[3];
+            const aoKey =
+              keys.find(
+                (k) =>
+                  k.toLowerCase().includes("afternoon") &&
+                  k.toLowerCase().includes("out"),
+              ) || keys[4];
+
+            const cardNode = addDayToMonthSection(section, mmdd || "");
+
+            // Remove animation initially for batch inject
+            cardNode.style.transition = "none";
+
+            const inMInp = cardNode.querySelector(".time-in-m");
+            const outMInp = cardNode.querySelector(".time-out-m");
+            const inAInp = cardNode.querySelector(".time-in-a");
+            const outAInp = cardNode.querySelector(".time-out-a");
+
+            inMInp.value = parseTimeStr(row[miKey], false);
+            outMInp.value = parseTimeStr(row[moKey], false);
+            inAInp.value = parseTimeStr(row[aiKey], true);
+            outAInp.value = parseTimeStr(row[aoKey], true);
+
+            setTimeout(() => calculateRow(inMInp), 0);
+          });
+        });
+
+        event.target.value = "";
       }
+
+      function exportToExcel() {
+        // Collect Student info
+        const sName = document.getElementById("studentName")
+          ? document.getElementById("studentName").value
+          : "";
+        const sProg = document.getElementById("studentProgram")
+          ? document.getElementById("studentProgram").value
+          : "";
+        const sYear = document.getElementById("studentYear")
+          ? document.getElementById("studentYear").value
+          : "";
+
+        const data = [];
+        data.push(["INTERNSHIP TIME TRACKER REPORT"]);
+        data.push(["NAME:", sName, "PROGRAM:", sProg, "YEAR:", sYear]);
+        data.push([]); // Spacer
+
+        const sections = document.querySelectorAll(".month-section");
+
+        sections.forEach((section) => {
+          const monthName = section.querySelector(".month-title").textContent;
+          data.push([monthName.toUpperCase()]);
+          data.push([
+            "DATE",
+            "MORNING IN",
+            "MORNING OUT",
+            "AFTERNOON IN",
+            "AFTERNOON OUT",
+            "UT (HRS)",
+            "OT (HRS)",
+            "TOTAL DAILY HOURS",
+          ]);
+
+          const rows = section.querySelectorAll(".entry-card");
+          rows.forEach((card) => {
+            const date = card.querySelector(".date-input").value || "";
+            const min = card.querySelector(".time-in-m").value || "";
+            const mout = card.querySelector(".time-out-m").value || "";
+            const ain = card.querySelector(".time-in-a").value || "";
+            const aout = card.querySelector(".time-out-a").value || "";
+            const total = parseFloat(card.dataset.total) || 0;
+            const ot = parseFloat(card.dataset.ot) || 0;
+            const ut = parseFloat(card.dataset.ut) || 0;
+
+            if (date || min || mout || ain || aout || total > 0) {
+              data.push([date, min, mout, ain, aout, parseFloat(ut.toFixed(2)), parseFloat(ot.toFixed(2)), parseFloat(total.toFixed(2))]);
+            }
+          });
+
+          const monthTotal =
+            section.querySelector(".month-subtotal").textContent;
+          data.push([
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "MONTH SUBTOTAL:",
+            parseFloat(monthTotal) || 0,
+          ]);
+          data.push([]); // Spacer
+        });
+
+        const grandTotal =
+          parseFloat(document.getElementById("grandTotal").textContent) || 0;
+        const totalOtText = document.getElementById("grandTotalOt").textContent;
+        const totalUtText = document.getElementById("grandTotalUt").textContent;
+
+        data.push(["", "", "", "", "", "", "GRAND TOTAL:", grandTotal]);
+        data.push(["", "", "", "", "", "", "TOTAL OVERTIME:", totalOtText]);
+        data.push(["", "", "", "", "", "", "TOTAL UNDERTIME:", totalUtText]);
+
+        const targetHours = 500;
+        const remainingHours = Math.max(0, targetHours - grandTotal);
+        data.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          `REMAINING HOURS (of ${targetHours}):`,
+          remainingHours,
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        ws["!cols"] = [
+          { wch: 18 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 18 },
+          { wch: 12 },
+          { wch: 12 },
+          { wch: 22 },
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Internship Hours");
+
+        try {
+          const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          const blob = new Blob([wbout], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          document.body.appendChild(a);
+          a.style = "display: none";
+          a.href = url;
+          a.download = "Internship_Hours_Report.xlsx";
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+        } catch (err) {
+          XLSX.writeFile(wb, "Internship_Hours_Report.xlsx", {
+            bookType: "xlsx",
+          });
+        }
+      }
+
+      function printSpecificMonth(btn) {
+        const section = btn.closest(".month-section");
+        window.selectedPrintMonth =
+          section.querySelector(".month-title").textContent;
+        window.print();
+      }
+
+      window.addEventListener("afterprint", () => {
+        window.selectedPrintMonth = null;
+      });
+
+      function preparePrintView() {
+        const sName = document.getElementById("studentName")
+          ? document.getElementById("studentName").value
+          : "";
+        const sProg = document.getElementById("studentProgram")
+          ? document.getElementById("studentProgram").value
+          : "";
+        const sYear = document.getElementById("studentYear")
+          ? document.getElementById("studentYear").value
+          : "";
+
+        const printContainer = document.getElementById("printContainer");
+        printContainer.innerHTML = ""; // Clear existing print layouts
+
+        const sections = document.querySelectorAll(".month-section");
+
+        let printedCount = 0;
+        sections.forEach((section, index) => {
+          const monthName = section.querySelector(".month-title").textContent;
+
+          if (
+            window.selectedPrintMonth &&
+            window.selectedPrintMonth !== monthName
+          ) {
+            return;
+          }
+
+          const monthWrapper = document.createElement("div");
+          monthWrapper.className = "pb-4";
+
+          // Enforce page break before every month except the first printed one
+          if (printedCount > 0) {
+            monthWrapper.style.pageBreakBefore = "always";
+          }
+          printedCount++;
+
+          monthWrapper.innerHTML = `
+               <h2 class="text-3xl font-bold mb-2 text-center text-black print:text-black">
+                 Internship Time Tracker Report
+               </h2>
+               
+               <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-gray-800 pb-4 mb-6">
+                 <div>
+                   <p class="text-lg font-bold text-black flex gap-2"><span>Name:</span> <span class="font-normal underline min-w-[200px] inline-block pt-1">${sName}</span></p>
+                   <p class="text-black flex gap-2 mt-1"><span class="font-bold">Program:</span> <span class="font-normal underline min-w-[200px] inline-block pt-1">${sProg}</span></p>
+                 </div>
+                 <div class="text-right mt-4 md:mt-0">
+                   <p class="text-black flex gap-2"><span class="font-bold">Year Level:</span> <span class="font-normal underline min-w-[10px] inline-block pt-1">${sYear}</span></p>
+                 </div>
+               </div>
+
+               <h3 class="text-xl font-bold text-black mb-3 border-b border-gray-300 pb-2">${monthName}</h3>
+               <div class="border border-gray-300 rounded-lg overflow-hidden mb-2 shadow-sm">
+                  <table class="w-full text-left text-sm text-black">
+                    <thead class="bg-gray-100 border-b border-gray-300">
+                      <tr>
+                        <th class="p-3 font-bold text-gray-800">Date</th>
+                        <th class="p-3 font-bold text-center text-gray-800">Morning In</th>
+                        <th class="p-3 font-bold text-center text-gray-800">Morning Out</th>
+                        <th class="p-3 font-bold text-center text-gray-800">Afternoon In</th>
+                        <th class="p-3 font-bold text-center text-gray-800">Afternoon Out</th>
+                        <th class="p-3 font-bold text-center text-gray-800">UT (h)</th>
+                        <th class="p-3 font-bold text-center text-gray-800">OT (h)</th>
+                        <th class="p-3 font-bold text-right text-gray-800">Daily Total</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                    </tbody>
+                  </table>
+               </div>
+               <div class="flex justify-end text-black font-bold mr-4">
+                  <span>Subtotal: <span class="text-blue-700">${section.querySelector(".month-subtotal").textContent}</span> hrs</span>
+               </div>
+            `;
+
+          const tbody = monthWrapper.querySelector("tbody");
+          const rows = section.querySelectorAll(".entry-card");
+
+          rows.forEach((card) => {
+            const date = card.querySelector(".date-input").value || "-";
+            const min = card.querySelector(".time-in-m").value || "-";
+            const mout = card.querySelector(".time-out-m").value || "-";
+            const ain = card.querySelector(".time-in-a").value || "-";
+            const aout = card.querySelector(".time-out-a").value || "-";
+            const total = card.querySelector(".row-total").textContent || "0.00";
+            const ot = card.querySelector(".row-ot").textContent || "0.00";
+            const ut = card.querySelector(".row-ut").textContent || "0";
+
+            if (
+              date !== "-" ||
+              min !== "-" ||
+              mout !== "-" ||
+              ain !== "-" ||
+              aout !== "-" ||
+              parseFloat(total) > 0
+            ) {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                        <td class="p-2 px-3 font-medium text-black">${date}</td>
+                        <td class="p-2 px-3 text-center text-gray-800">${min}</td>
+                        <td class="p-2 px-3 text-center text-gray-800">${mout}</td>
+                        <td class="p-2 px-3 text-center text-gray-800">${ain}</td>
+                        <td class="p-2 px-3 text-center text-gray-800">${aout}</td>
+                        <td class="p-2 px-3 text-center text-red-600 font-bold">${ut}</td>
+                        <td class="p-2 px-3 text-center text-emerald-600 font-bold">${ot}</td>
+                        <td class="p-2 px-3 text-right font-bold text-blue-700">${total}</td>
+                    `;
+              tbody.appendChild(tr);
+            }
+          });
+
+          printContainer.appendChild(monthWrapper);
+        });
+
+        const grandTotalWrapper = document.createElement("div");
+        grandTotalWrapper.className = "mt-8 flex flex-col gap-4";
+        if (window.selectedPrintMonth) {
+          grandTotalWrapper.style.display = "none";
+        }
+
+        const gTotal = document.getElementById("grandTotal").textContent;
+        const hLeft = document.getElementById("hoursLeft").textContent;
+
+        grandTotalWrapper.innerHTML = `
+            <div class="border-2 border-gray-300 rounded-xl p-6 flex justify-between items-center bg-gray-50 shadow-sm print:bg-gray-100">
+              <h3 class="text-2xl font-bold text-black">Overall Total Hours</h3>
+              <div class="text-3xl font-black text-black">
+                <span>${gTotal}</span>
+                <span class="text-lg font-medium text-gray-600">hrs</span>
+              </div>
+            </div>
+            
+            <div class="border-2 border-gray-300 rounded-xl p-6 flex justify-between items-center bg-gray-50 shadow-sm print:bg-gray-100">
+              <h3 class="text-2xl font-bold text-black">Remaining Hours (Target: 500)</h3>
+              <div class="text-3xl font-black text-black">
+                <span>${hLeft}</span>
+                <span class="text-lg font-medium text-gray-600">hrs</span>
+              </div>
+            </div>
+        `;
+        printContainer.appendChild(grandTotalWrapper);
+      }
+      window.addEventListener("beforeprint", preparePrintView);
 
       // Init
       document.addEventListener("DOMContentLoaded", initialize);
